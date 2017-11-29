@@ -28,7 +28,7 @@ public class TestFunction extends Service implements SensorEventListener {
         startMeasurement();
     }
 
-    @SuppressLint("ServiceCast")
+    
     public void StartColl(){
         //Adapter adapter = new
         boolean updated = false;
