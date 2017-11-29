@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Wear</string>
+    <string name="foreground_service_description_text">Hurray you’re flying!</string>
+</resources>
