@@ -1,58 +1,59 @@
 package com.example.pluginlibrary;
 
-import android.annotation.SuppressLint;
-import android.app.Service;
-import android.content.Intent;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.util.Log;
+import android.os.Bundle;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.Wearable;
 import com.unity3d.player.UnityPlayer;
+import com.unity3d.player.UnityPlayerActivity;
+
+import java.util.List;
+
 
 /**
  * Created by sanch on 11/27/2017.
  */
 
-public class TestFunction extends Service implements SensorEventListener {
-    private static SensorManager manager;
+public class TestFunction extends UnityPlayerActivity implements SensorEventListener {
+    private static SensorManager manager = null;
     private static Sensor sensor;
-    private float[] sensorData = null;
+    public float[] sensorData = null;
+    public Context context;
 
     @Override
-    public void onCreate() {
-        super.onCreate();
-        startMeasurement();
+    protected void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
     }
 
-    
-    public void StartColl(){
-        //Adapter adapter = new
-        boolean updated = false;
-        Log.d("Call Activity", "Start measurement 1 .... !!!");
-        manager = (SensorManager) getApplicationContext().getSystemService(SEARCH_SERVICE);
-        Log.d("Call Activity", "Start measurement 2.... !!!");
-        Sensor sensor = manager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        Log.d("Call Activity", "Start measurement 3.... !!!");
+    public void StartColl(Context context){
+        /*boolean updated = false;
+        manager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        Sensor sensor = manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         if (sensor != null) {
-            Log.d("Call Activity", "Start measurement 4.... !!!");
             updated = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-        }
-        Log.d("Call Activity", "Start measurement 5.... !!!");
-        if(updated) {
-            Log.d("Call Activity", "Start measurement Updated Successfully .... !!!");
-        } else {
-            Log.d("Call Activity", "Start measurement Updated Failure .... !!!");
-        }
+        }*/
+        ConnectionManager.getInstance(context).sendMessage(new ConnectionManager.ConnectionManagerRunnable(context) {
+            @Override
+            public void send(GoogleApiClient googleApiClient) {
+                List<Node> nodes = Wearable.NodeApi.getConnectedNodes(googleApiClient).await().getNodes();
+                for(Node node : nodes) {
+                    Wearable.MessageApi.sendMessage(googleApiClient,node.getId(),ClientPaths.START_MEASUREMENT,null);
+                }
+            }
+        });
     }
 
-    public static String startMeasurement() {
+    public static String startMeasurement(Context context) {
         TestFunction function = new TestFunction();
-        function.StartColl();
-        return "Started";
+        function.StartColl(context);
+        function.fun();
+        return "data";
     }
 
     private void stopMeasurement() {
@@ -61,20 +62,24 @@ public class TestFunction extends Service implements SensorEventListener {
         }
     }
 
-    public void fun() {
-        Log.d("Call Activity", "Data Sent = "+sensorData.toString());
-        UnityPlayer.UnitySendMessage("GvrControllerMain","Receiver_Message", sensorData.toString());
+    public String fun() {
+        int d1 = (int) sensorData[2];
+        String val = sensorData[0]+","+sensorData[1]+","+sensorData[2];
+        //Log.d("Call Activity", "Combined Data = "+val);
+        UnityPlayer.UnitySendMessage("TestCube","Receiver_Message2", val);
+        //Log.d("Call Activity", "Data Sent = "+d1);
+        return String.valueOf(d1);
     }
 
-    @Nullable
+    /*@Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
+    }*/
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        Log.d("Call Activity", "Sensor Data .............");
+        //Log.d("Call Activity", "Sensor Data .............");
         sensorData = sensorEvent.values;
         fun();
     }
